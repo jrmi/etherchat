@@ -1,0 +1,21 @@
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 50%;
+  background-color: #656f85;
+}
+
+.message-list {
+  flex-grow: 1;
+}
+
+.message {
+  padding: 2em;
+  display: flex;
+  flex-direction: row;
+}
+
+.message textarea {
+  flex-grow: 1;
+}

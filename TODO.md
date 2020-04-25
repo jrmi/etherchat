@@ -1,0 +1,4 @@
+- [ ] Markdown messages
+- [ ] Desktop notifications
+- [ ] e2e notifications
+- [ ] Favicon new message count

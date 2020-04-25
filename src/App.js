@@ -1,25 +1,31 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import Chat from './Chat';
+import { Provider } from '@scripters/use-socket.io';
+
+const SOCKET_URL = 'http://localhost:4000';
+const SOCKET_OPTIONS = {
+  forceNew: true,
+};
+
+const getRoomName = () => {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  console.log(urlParams.get('room'));
+  return urlParams.get('room');
+};
+
+const user = {
+  name: 'jrmi',
+};
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Provider url={SOCKET_URL} options={SOCKET_OPTIONS}>
+      <div className='App'>
+        <Chat room={getRoomName()} user={user} />
+      </div>
+    </Provider>
   );
 }
 
