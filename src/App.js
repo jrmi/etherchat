@@ -48,7 +48,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <Provider url={SOCKET_URL} options={SOCKET_OPTIONS}>
         <div className='App'>
-          <Chat room={getRoomName()} user={user} />
+          <Chat room={getRoomName()} user={user} secret='test123' />
         </div>
       </Provider>
     </ThemeProvider>

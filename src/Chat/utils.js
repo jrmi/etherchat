@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 let favurl;
 
 export const updateFavicon = (count) => {
@@ -120,4 +122,13 @@ export const notify = ({ userId, content }) => {
       }
     });
   }
+};
+
+export const encrypt = (message, secret) => {
+  return CryptoJS.AES.encrypt(JSON.stringify(message), secret).toString();
+};
+
+export const decrypt = (cryptedMessage, secret) => {
+  var bytes = CryptoJS.AES.decrypt(cryptedMessage, secret);
+  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 };

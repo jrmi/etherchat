@@ -3,7 +3,13 @@ import { useSocket, useEmit } from '@scripters/use-socket.io';
 import './Chat.css';
 import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
-import { updateFavicon, notify, onActivityIdle } from './utils';
+import {
+  updateFavicon,
+  notify,
+  onActivityIdle,
+  encrypt,
+  decrypt,
+} from './utils';
 import MessageForm from './MessageForm';
 import {
   MessageList,
@@ -13,7 +19,18 @@ import {
   MessageGroup,
 } from '@livechat/ui-kit';
 
-const Chat = ({ room, user: { name } }) => {
+const generateMsg = ({ user: { name, userId }, content }) => {
+  const newMessage = {
+    user: name,
+    content,
+    uid: nanoid(),
+    timestamp: dayjs().toISOString(),
+    userId: userId,
+  };
+  return newMessage;
+};
+
+const Chat = ({ room, user: { name }, secret }) => {
   const [messages, setMessages] = React.useState([
     {
       user: name,
@@ -61,9 +78,10 @@ const Chat = ({ room, user: { name } }) => {
   React.useEffect(() => {
     // New message handler
     socket.on('newMessage', (newMessage) => {
+      const decryptedMessage = decrypt(newMessage, secret);
       const parsedMessage = {
-        ...newMessage,
-        timestamp: dayjs(newMessage.timestamp),
+        ...decryptedMessage,
+        timestamp: dayjs(decryptedMessage.timestamp),
       };
       setMessages((prevMessages) => {
         return [...prevMessages, parsedMessage];
@@ -79,7 +97,7 @@ const Chat = ({ room, user: { name } }) => {
     return () => {
       socket.off('newMessage');
     };
-  }, [room, socket, userId]);
+  }, [room, secret, socket, userId]);
 
   React.useEffect(() => {
     updateFavicon(unreadCount);
@@ -87,27 +105,23 @@ const Chat = ({ room, user: { name } }) => {
 
   const onSubmit = React.useCallback(
     (messageContent) => {
-      const newMessage = {
-        user: name,
+      const newMessage = generateMsg({
+        user: { name: name, userId },
         content: messageContent,
-        uid: nanoid(),
-        timestamp: dayjs().toISOString(),
-        userId: userId,
-      };
-      emit('message', newMessage);
+      });
+      emit('message', encrypt(newMessage, secret));
     },
-    [emit, name, userId]
+    [emit, name, secret, userId]
   );
 
   const messageGroups = React.useMemo(
-    (maxTimeDiff = 5000) => {
+    (maxTimeDiff = 30000) => {
       const messageGroups = [];
       let previousUser = messages[0].userId;
       let previousTime = messages[0].timestamp;
       let currentGroup = [];
 
       messages.forEach((message, index) => {
-        console.log(message.timestamp.diff(previousTime));
         if (
           message.userId !== previousUser ||
           message.timestamp.diff(previousTime) > maxTimeDiff
@@ -154,14 +168,3 @@ const Chat = ({ room, user: { name } }) => {
 };
 
 export default Chat;
-
-/*{messages.map(({ uid, userId: msgUserId, timestamp, content }) => (
-          <Message
-            authorName={userId}
-            date={timestamp.format('HH:mm')}
-            isOwn={msgUserId === userId}
-            key={uid}
-          >
-            <MessageText>{content}</MessageText>
-          </Message>
-        ))}*/
