@@ -2,3 +2,12 @@
 - [ ] Desktop notifications
 - [ ] e2e notifications
 - [ ] Favicon new message count
+- [ ] Can customize user name
+- [ ] Better style
+- [ ] Responsive
+- [ ] Service worker with offline support
+- [ ] save message on server without database
+- [ ] Load previous message from server
+- [ ] Paginate previous message from server
+- [ ] Handle reset count on not idle
+- [ ] Save user name in Localstorage

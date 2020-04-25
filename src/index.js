@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import RelativeTime from 'dayjs/plugin/relativeTime';
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
+
+dayjs.extend(RelativeTime);
+dayjs.locale('fr');
 
 ReactDOM.render(
   <React.StrictMode>
