@@ -30,15 +30,16 @@ const generateMsg = ({ user: { name, userId }, content }) => {
   return newMessage;
 };
 
-const Chat = ({ room, user: { name }, secret }) => {
-  const [messages, setMessages] = React.useState([
-    {
-      user: name,
-      content: 'This is a message',
-      uid: nanoid(),
-      timestamp: dayjs(),
-    },
-  ]);
+const parseMessage = (rawMessage, secret) => {
+  const decryptedMessage = decrypt(rawMessage, secret);
+  return {
+    ...decryptedMessage,
+    timestamp: dayjs(decryptedMessage.timestamp),
+  };
+};
+
+const Chat = ({ room, secret, user: { name } }) => {
+  const [messages, setMessages] = React.useState([]);
 
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [userId, setUserId] = React.useState(null);
@@ -51,11 +52,16 @@ const Chat = ({ room, user: { name }, secret }) => {
       console.log('I am user', myid);
       setUserId(myid);
     });
+    socket.on('history', (messagesList) => {
+      console.log('receiveHistory', messagesList);
+      setMessages(messagesList.map((message) => parseMessage(message, secret)));
+    });
+    console.log('join room', room);
     socket.emit('join', room);
     return () => {
       socket.off('yourid');
     };
-  }, [room, socket]);
+  }, [room, secret, socket]);
 
   React.useEffect(() => {
     const stopListening = onActivityIdle(
@@ -78,19 +84,18 @@ const Chat = ({ room, user: { name }, secret }) => {
   React.useEffect(() => {
     // New message handler
     socket.on('newMessage', (newMessage) => {
-      const decryptedMessage = decrypt(newMessage, secret);
-      const parsedMessage = {
-        ...decryptedMessage,
-        timestamp: dayjs(decryptedMessage.timestamp),
-      };
-      setMessages((prevMessages) => {
-        return [...prevMessages, parsedMessage];
-      });
+      try {
+        const parsedMessage = parseMessage(newMessage, secret);
+        setMessages((prevMessages) => {
+          return [...prevMessages, parsedMessage];
+        });
 
-      if (parsedMessage.userId !== userId) {
-        console.log('Inc count');
-        setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
-        notify(parsedMessage);
+        if (parsedMessage.userId !== userId) {
+          setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
+          notify(parsedMessage);
+        }
+      } catch (e) {
+        console.warn("Discard message as it can't be decoded", e);
       }
     });
 
@@ -116,6 +121,7 @@ const Chat = ({ room, user: { name }, secret }) => {
 
   const messageGroups = React.useMemo(
     (maxTimeDiff = 30000) => {
+      if (!messages || messages.length === 0) return [];
       const messageGroups = [];
       let previousUser = messages[0].userId;
       let previousTime = messages[0].timestamp;

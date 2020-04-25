@@ -1,6 +1,7 @@
 var nanoid = require('nanoid').nanoid;
 var express = require('express');
 const path = require('path');
+const Datastore = require('nedb');
 
 var app = express();
 var http = require('http').createServer(app);
@@ -27,12 +28,18 @@ http.listen(port, () => {
 });
 
 const rooms = {};
+const roomDBs = {};
 
 io.on('connection', (socket) => {
-  console.log('New user connected');
   socket.on('join', (roomName) => {
     if (rooms[roomName] === undefined) {
       rooms[roomName] = [];
+    }
+    if (roomDBs[roomName] === undefined) {
+      roomDBs[roomName] = new Datastore({
+        filename: `data/${roomName}.db`,
+        autoload: true,
+      });
     }
     const userId = nanoid();
     rooms[roomName].push(userId);
@@ -41,11 +48,19 @@ io.on('connection', (socket) => {
     socket.join(roomName);
     socket.emit('yourid', { user: userId });
 
+    roomDBs[roomName].find({}, (err, docs) => {
+      socket.emit(
+        'history',
+        docs.map(({ content }) => content)
+      );
+    });
+
     // Send new user to all user of this room
     socket.broadcast.to(roomName).emit('incoming', { user: userId });
 
     socket.on('message', (newMessage) => {
       console.log('newMessage', newMessage);
+      roomDBs[roomName].insert({ uid: nanoid(), content: newMessage });
       socket.emit('newMessage', newMessage);
       socket.broadcast.to(roomName).emit('newMessage', newMessage);
     });
