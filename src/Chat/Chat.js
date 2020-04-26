@@ -131,15 +131,18 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
 
     const messageGroups = [];
     let previousUser = messages[0].user.uid;
+    let previousUserName = messages[0].user.name;
     let previousTime = messages[0].timestamp;
     let currentGroup = [];
 
     messages.forEach((message, index) => {
       if (
         message.user.uid !== previousUser ||
+        message.user.name !== previousUserName ||
         message.timestamp.diff(previousTime) > maxTimeDiff
       ) {
         previousUser = message.user.uid;
+        previousUserName = message.user.name;
         messageGroups.push({ id: currentGroup[0].uid, group: currentGroup });
         currentGroup = [];
       }

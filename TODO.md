@@ -9,7 +9,7 @@
 - [x] Load previous message from server
 - [x] Serve file from express
 - [x] Allow backend url configuration at build
-- [ ] Can customize user name
+- [x] Can customize user name
 - [ ] Better style
 - [ ] Custom favicon
 - [ ] Add ci
