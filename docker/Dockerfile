@@ -4,6 +4,8 @@ WORKDIR /etherchat
 
 RUN git clone https://github.com/jrmi/etherchat.git /etherchat
 
+ADD .env /etherchat/.env
+
 RUN npm i \
     && npm run build
 

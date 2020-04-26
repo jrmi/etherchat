@@ -12,7 +12,7 @@ import ChatPage from './Views/ChatPage';
 import HomePage from './Views/HomePage';
 import { nanoid } from 'nanoid';
 
-const SOCKET_URL = process.env.SOCKET_URL || 'http://localhost:4000';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:4000';
 const SOCKET_OPTIONS = {
   forceNew: true,
 };
