@@ -1,9 +1,8 @@
 import React from 'react';
 import { useSocket, useEmit } from '@scripters/use-socket.io';
-import './Chat.css';
 import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
-import { updateFavicon, notify, encrypt, decrypt } from './utils';
+import { encrypt, decrypt } from './utils';
 
 const generateMsg = ({ user: { name, uid }, content }) => {
   const newMessage = {
@@ -28,7 +27,7 @@ const parseMessage = (rawMessage, secret) => {
   return null;
 };
 
-const useRoom = (room, secret, user, onNewMessage) => {
+const useRoom = ({ room, secret, user, onMessage = () => {} }) => {
   const socket = useSocket();
   const emit = useEmit();
   const [messages, setMessages] = React.useState([]);
@@ -59,12 +58,7 @@ const useRoom = (room, secret, user, onNewMessage) => {
           return [...prevMessages, parsedMessage];
         });
 
-        onNewMessage(parsedMessage);
-
-        /*if (parsedMessage.user.uid !== user.uid && !visibility) {
-          setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
-          notify(parsedMessage);
-        }*/
+        onMessage(parsedMessage);
       } catch (e) {
         console.warn("Discard message as it can't be decoded", e);
       }
@@ -73,9 +67,9 @@ const useRoom = (room, secret, user, onNewMessage) => {
     return () => {
       socket.off('newMessage');
     };
-  }, [onNewMessage, secret, socket]);
+  }, [onMessage, secret, socket]);
 
-  const send = React.useCallback(
+  const sendMessage = React.useCallback(
     (messageContent) => {
       const newMessage = generateMsg({
         user,
@@ -85,7 +79,7 @@ const useRoom = (room, secret, user, onNewMessage) => {
     },
     [emit, secret, user]
   );
-  return [messages, send];
+  return [messages, sendMessage];
 };
 
 export default useRoom;

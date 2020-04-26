@@ -1,9 +1,6 @@
 import React from 'react';
-import { useSocket, useEmit } from '@scripters/use-socket.io';
 import './Chat.css';
-import dayjs from 'dayjs';
-import { nanoid } from 'nanoid';
-import { updateFavicon, notify, encrypt, decrypt } from './utils';
+import { updateFavicon, notify } from './utils';
 import MessageForm from './MessageForm';
 import {
   MessageList,
@@ -14,77 +11,25 @@ import {
 
 import useVisibility from '../Hooks/useVisibility';
 import useActivity from '../Hooks/useActivity';
+import useRoom from './useRoom';
 
-const generateMsg = ({ user: { name, uid }, content }) => {
-  const newMessage = {
-    user: { name, uid },
-    content,
-    uid: nanoid(),
-    timestamp: dayjs().toISOString(),
-  };
-  return newMessage;
-};
-
-const parseMessage = (rawMessage, secret) => {
-  try {
-    const decryptedMessage = decrypt(rawMessage, secret);
-    return {
-      ...decryptedMessage,
-      timestamp: dayjs(decryptedMessage.timestamp),
-    };
-  } catch (e) {
-    console.warn("Discard message as it can't be decoded", e);
-  }
-  return null;
-};
-
-const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
-  const [messages, setMessages] = React.useState([]);
+const Chat = ({ room, secret, user: { name, uid }, user, setUser }) => {
+  //const [messages, setMessages] = React.useState([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
   const visibility = useVisibility();
   const active = useActivity();
-  const socket = useSocket();
-  const emit = useEmit();
 
-  React.useEffect(() => {
-    // To get message history
-    socket.on('history', (messagesList) => {
-      setMessages(
-        messagesList
-          .map((message) => parseMessage(message, secret))
-          .filter((m) => m)
-      );
-    });
-    console.log('join room', room);
-    // Join the room
-    socket.emit('join', { room, uid });
-    return () => {
-      socket.off('history');
-    };
-  }, [room, secret, socket, uid]);
-
-  React.useEffect(() => {
-    // New message handler
-    socket.on('newMessage', (newMessage) => {
-      try {
-        const parsedMessage = parseMessage(newMessage, secret);
-        setMessages((prevMessages) => {
-          return [...prevMessages, parsedMessage];
-        });
-
-        if (parsedMessage.user.uid !== uid && !visibility) {
-          setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
-          notify(parsedMessage);
-        }
-      } catch (e) {
-        console.warn("Discard message as it can't be decoded", e);
+  const [messages, sendMessage] = useRoom({
+    room,
+    secret,
+    user,
+    onMessage: (message) => {
+      if (message.user.uid !== uid && !visibility) {
+        setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
+        notify(message);
       }
-    });
-
-    return () => {
-      socket.off('newMessage');
-    };
-  }, [secret, socket, uid, visibility]);
+    },
+  });
 
   React.useEffect(() => {
     // Update favicon en read count change
@@ -98,17 +43,13 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
     }
   }, [active]);
 
-  // On new message submit
-  const onSubmit = React.useCallback(
-    (messageContent) => {
-      const newMessage = generateMsg({
-        user: { name, uid },
-        content: messageContent,
-      });
-      if (newMessage) emit('message', encrypt(newMessage, secret));
-    },
-    [emit, name, secret, uid]
-  );
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    React.useEffect(() => {
+      // Update favicon en read count change
+      console.log('Visible', visibility);
+    }, [visibility]);
+  }
 
   // Split messages in groups
   const computeMessageGroup = (maxTimeDiff = 30000) => {
@@ -167,7 +108,7 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
           </MessageGroup>
         ))}
       </MessageList>
-      <MessageForm onSubmit={onSubmit} />
+      <MessageForm onSubmit={sendMessage} />
     </div>
   );
 };

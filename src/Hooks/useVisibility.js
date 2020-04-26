@@ -7,19 +7,19 @@ const useVisibility = () => {
     const handleVisibilityChange = () => {
       setVisibility(!document.hidden);
     };
-    /*const handleBlur = () => {
-      setVisibility(false);
-    };
     const handleFocus = () => {
       setVisibility(true);
-    };*/
+    };
+    const handleBlur = () => {
+      setVisibility(false);
+    };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    //document.addEventListener('focus', handleBlur);
-    //document.addEventListener('blur', handleFocus);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      //document.removeEventListener('focus', handleBlur);
-      //document.removeEventListener('blur', handleFocus);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 
