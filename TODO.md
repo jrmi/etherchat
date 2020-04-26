@@ -6,11 +6,14 @@
 - [x] Handle reset count on not idle
 - [x] Add Home page
 - [x] Persist crypted messages server side
+- [x] Load previous message from server
+- [x] Serve file from express
 - [ ] Can customize user name
-- [ ] Load previous message from server
 - [ ] Better style
-- [ ] Serve file from express
 - [ ] Custom favicon
+- [ ] Add ci
+- [ ] Add tests
+- [ ] Improve Readme
 
 # v0.2
 
