@@ -8,6 +8,7 @@
 - [x] Persist crypted messages server side
 - [x] Load previous message from server
 - [x] Serve file from express
+- [ ] Allow url configuration
 - [ ] Can customize user name
 - [ ] Better style
 - [ ] Custom favicon
