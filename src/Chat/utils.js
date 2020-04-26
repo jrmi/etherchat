@@ -53,57 +53,20 @@ export const updateFavicon = (count) => {
   };
 };
 
-export const onActivityIdle = (
-  activityCallback = () => {},
-  idleCallback = () => {},
-  timeout = 2000
-) => {
-  let t;
-  let previouslyIdle = true;
-
-  const resetTimer = (e) => {
-    if (previouslyIdle) {
-      activityCallback();
-      previouslyIdle = false;
-    }
-    clearTimeout(t);
-    t = setTimeout(() => {
-      previouslyIdle = true;
-      idleCallback();
-    }, timeout);
-  };
-
-  document.addEventListener('load', resetTimer);
-  document.addEventListener('mousemove', resetTimer);
-  document.addEventListener('mousedown', resetTimer);
-  document.addEventListener('touchstart', resetTimer);
-  document.addEventListener('keypress', resetTimer);
-  //document.addEventListener('scroll', resetTimer, true);
-
-  return () => {
-    document.removeEventListener('load', resetTimer);
-    document.removeEventListener('mousemove', resetTimer);
-    document.removeEventListener('mousedown', resetTimer);
-    document.removeEventListener('touchstart', resetTimer);
-    document.removeEventListener('keypress', resetTimer);
-    //document.removeEventListener('scroll', resetTimer, true);
-  };
-};
-
 const showNotification = (message) => {
   const notification = new Notification(message);
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
       // The tab has become visible so clear the now-stale Notification.
       notification.close();
-      document.addEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     }
   };
   document.addEventListener('visibilitychange', handleVisibilityChange);
 };
 
 export const notify = ({ user: { name }, content }) => {
-  const textMessage = `New message from <${name}>: ${content}`;
+  const textMessage = `New message from <${name}>:\n${content}`;
   if (!('Notification' in window)) {
     alert('This browser does not support desktop notification');
   }

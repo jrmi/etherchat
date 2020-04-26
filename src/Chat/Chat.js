@@ -3,13 +3,7 @@ import { useSocket, useEmit } from '@scripters/use-socket.io';
 import './Chat.css';
 import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
-import {
-  updateFavicon,
-  notify,
-  onActivityIdle,
-  encrypt,
-  decrypt,
-} from './utils';
+import { updateFavicon, notify, encrypt, decrypt } from './utils';
 import MessageForm from './MessageForm';
 import {
   MessageList,
@@ -17,6 +11,9 @@ import {
   MessageText,
   MessageGroup,
 } from '@livechat/ui-kit';
+
+import useVisibility from '../Hooks/useVisibility';
+import useActivity from '../Hooks/useActivity';
 
 const generateMsg = ({ user: { name, uid }, content }) => {
   const newMessage = {
@@ -44,7 +41,8 @@ const parseMessage = (rawMessage, secret) => {
 const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
   const [messages, setMessages] = React.useState([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
-
+  const visibility = useVisibility();
+  const active = useActivity();
   const socket = useSocket();
   const emit = useEmit();
 
@@ -74,7 +72,7 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
           return [...prevMessages, parsedMessage];
         });
 
-        if (parsedMessage.user.uid !== uid) {
+        if (parsedMessage.user.uid !== uid && !visibility) {
           setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
           notify(parsedMessage);
         }
@@ -86,31 +84,19 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
     return () => {
       socket.off('newMessage');
     };
-  }, [secret, socket, uid]);
+  }, [secret, socket, uid, visibility]);
 
   React.useEffect(() => {
-    // Start listening activity
-    const stopListening = onActivityIdle(
-      () => {
-        console.log('Activity');
-        if (unreadCount > 0) {
-          console.log('reset count');
-          setUnreadCount(0);
-        }
-      },
-      () => {
-        console.log('Idle');
-      }
-    );
-    return () => {
-      stopListening();
-    };
-  }, [unreadCount]);
-
-  React.useEffect(() => {
-    // Update facvicon en read count change
+    // Update favicon en read count change
     updateFavicon(unreadCount);
   }, [unreadCount]);
+
+  React.useEffect(() => {
+    // Update favicon en read count change
+    if (active) {
+      setUnreadCount(0);
+    }
+  }, [active]);
 
   // On new message submit
   const onSubmit = React.useCallback(
