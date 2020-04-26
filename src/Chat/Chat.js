@@ -51,7 +51,6 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
   React.useEffect(() => {
     // To get message history
     socket.on('history', (messagesList) => {
-      console.log(messagesList);
       setMessages(
         messagesList
           .map((message) => parseMessage(message, secret))
@@ -160,7 +159,7 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
   return (
     <div className='chat'>
       <MessageList active style={{ paddingTop: '3rem' }}>
-        {messageGroups.map(({ uid: groupUid, group }) => (
+        {messageGroups.map(({ id: groupUid, group }) => (
           <MessageGroup key={groupUid} onlyFirstWithMeta>
             {group.map(
               ({
