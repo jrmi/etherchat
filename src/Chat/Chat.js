@@ -75,7 +75,7 @@ const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
           return [...prevMessages, parsedMessage];
         });
 
-        if (parsedMessage.uid !== uid) {
+        if (parsedMessage.user.uid !== uid) {
           setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
           notify(parsedMessage);
         }
