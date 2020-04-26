@@ -102,8 +102,8 @@ const showNotification = (message) => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
 };
 
-export const notify = ({ userId, content }) => {
-  const textMessage = `New message from ${userId}: ${content}`;
+export const notify = ({ user: { name }, content }) => {
+  const textMessage = `New message from <${name}>: ${content}`;
   if (!('Notification' in window)) {
     alert('This browser does not support desktop notification');
   }

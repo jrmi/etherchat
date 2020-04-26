@@ -15,17 +15,15 @@ import {
   MessageList,
   Message,
   MessageText,
-  TitleBar,
   MessageGroup,
 } from '@livechat/ui-kit';
 
-const generateMsg = ({ user: { name, userId }, content }) => {
+const generateMsg = ({ user: { name, uid }, content }) => {
   const newMessage = {
-    user: name,
+    user: { name, uid },
     content,
     uid: nanoid(),
     timestamp: dayjs().toISOString(),
-    userId: userId,
   };
   return newMessage;
 };
@@ -43,22 +41,17 @@ const parseMessage = (rawMessage, secret) => {
   return null;
 };
 
-const Chat = ({ room, secret, user: { name } }) => {
+const Chat = ({ room, secret, user: { name, uid }, setUser }) => {
   const [messages, setMessages] = React.useState([]);
-
   const [unreadCount, setUnreadCount] = React.useState(0);
-  const [userId, setUserId] = React.useState(null);
 
   const socket = useSocket();
   const emit = useEmit();
 
   React.useEffect(() => {
-    socket.on('yourid', ({ user: myid }) => {
-      console.log('I am user', myid);
-      setUserId(myid);
-    });
+    // To get message history
     socket.on('history', (messagesList) => {
-      console.log('receiveHistory', messagesList);
+      console.log(messagesList);
       setMessages(
         messagesList
           .map((message) => parseMessage(message, secret))
@@ -66,13 +59,38 @@ const Chat = ({ room, secret, user: { name } }) => {
       );
     });
     console.log('join room', room);
-    socket.emit('join', room);
+    // Join the room
+    socket.emit('join', { room, uid });
     return () => {
-      socket.off('yourid');
+      socket.off('history');
     };
-  }, [room, secret, socket]);
+  }, [room, secret, socket, uid]);
 
   React.useEffect(() => {
+    // New message handler
+    socket.on('newMessage', (newMessage) => {
+      try {
+        const parsedMessage = parseMessage(newMessage, secret);
+        setMessages((prevMessages) => {
+          return [...prevMessages, parsedMessage];
+        });
+
+        if (parsedMessage.uid !== uid) {
+          setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
+          notify(parsedMessage);
+        }
+      } catch (e) {
+        console.warn("Discard message as it can't be decoded", e);
+      }
+    });
+
+    return () => {
+      socket.off('newMessage');
+    };
+  }, [secret, socket, uid]);
+
+  React.useEffect(() => {
+    // Start listening activity
     const stopListening = onActivityIdle(
       () => {
         console.log('Activity');
@@ -91,64 +109,44 @@ const Chat = ({ room, secret, user: { name } }) => {
   }, [unreadCount]);
 
   React.useEffect(() => {
-    // New message handler
-    socket.on('newMessage', (newMessage) => {
-      try {
-        const parsedMessage = parseMessage(newMessage, secret);
-        setMessages((prevMessages) => {
-          return [...prevMessages, parsedMessage];
-        });
-
-        if (parsedMessage.userId !== userId) {
-          setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
-          notify(parsedMessage);
-        }
-      } catch (e) {
-        console.warn("Discard message as it can't be decoded", e);
-      }
-    });
-
-    return () => {
-      socket.off('newMessage');
-    };
-  }, [room, secret, socket, userId]);
-
-  React.useEffect(() => {
+    // Update facvicon en read count change
     updateFavicon(unreadCount);
   }, [unreadCount]);
 
+  // On new message submit
   const onSubmit = React.useCallback(
     (messageContent) => {
       const newMessage = generateMsg({
-        user: { name: name, userId },
+        user: { name, uid },
         content: messageContent,
       });
       if (newMessage) emit('message', encrypt(newMessage, secret));
     },
-    [emit, name, secret, userId]
+    [emit, name, secret, uid]
   );
 
+  // Split messages in groups
   const computeMessageGroup = (maxTimeDiff = 30000) => {
     if (!messages || messages.length === 0) return [];
 
     const messageGroups = [];
-    let previousUser = messages[0].userId;
+    let previousUser = messages[0].user.uid;
     let previousTime = messages[0].timestamp;
     let currentGroup = [];
 
     messages.forEach((message, index) => {
       if (
-        message.userId !== previousUser ||
+        message.user.uid !== previousUser ||
         message.timestamp.diff(previousTime) > maxTimeDiff
       ) {
-        previousUser = message.userId;
-        messageGroups.push(currentGroup);
+        previousUser = message.user.uid;
+        messageGroups.push({ id: currentGroup[0].uid, group: currentGroup });
         currentGroup = [];
       }
       previousTime = message.timestamp;
       currentGroup.push(message);
       if (index === messages.length - 1) {
-        messageGroups.push(currentGroup);
+        messageGroups.push({ id: currentGroup[0].uid, group: currentGroup });
       }
     });
     return messageGroups;
@@ -158,17 +156,21 @@ const Chat = ({ room, secret, user: { name } }) => {
 
   return (
     <div className='chat'>
-      <TitleBar title={`Chat room: ${room}`} />
-      <MessageList active>
-        {messageGroups.map((messageGroup) => (
-          <MessageGroup onlyFirstWithMeta>
-            {messageGroup.map(
-              ({ uid, userId: msgUserId, timestamp, content }) => (
+      <MessageList active style={{ paddingTop: '3rem' }}>
+        {messageGroups.map(({ uid: groupUid, group }) => (
+          <MessageGroup key={groupUid} onlyFirstWithMeta>
+            {group.map(
+              ({
+                uid: msgUid,
+                user: { name, uid: msgUserId },
+                timestamp,
+                content,
+              }) => (
                 <Message
-                  authorName={userId}
+                  authorName={name}
                   date={timestamp.format('HH:mm')}
-                  isOwn={msgUserId === userId}
-                  key={uid}
+                  isOwn={msgUserId === uid}
+                  key={msgUid}
                 >
                   <MessageText>{content}</MessageText>
                 </Message>

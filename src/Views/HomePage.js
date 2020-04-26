@@ -1,5 +1,6 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
+import './HomePage.css';
 
 const HomePage = () => {
   let history = useHistory();
@@ -16,13 +17,15 @@ const HomePage = () => {
   }, [history, roomName]);
 
   return (
-    <>
+    <div class='homepage'>
       <h1>Enter your room name !!</h1>
-      <div>
+      <form>
         <input onChange={handleChange} />
-        <button onClick={handleClick}>Go</button>
-      </div>
-    </>
+        <button type='submit' onClick={handleClick}>
+          Go
+        </button>
+      </form>
+    </div>
   );
 };
 

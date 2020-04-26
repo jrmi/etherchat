@@ -1,6 +1,6 @@
 import React from 'react';
 import { Provider } from '@scripters/use-socket.io';
-import { ThemeProvider } from '@livechat/ui-kit';
+import { ThemeProvider, defaultTheme } from '@livechat/ui-kit';
 import {
   BrowserRouter as Router,
   Route,
@@ -17,29 +17,6 @@ const SOCKET_OPTIONS = {
   forceNew: true,
 };
 
-const theme = {
-  vars: {
-    'primary-color': '#427fe1',
-    'secondary-color': '#fbfbfb',
-    'tertiary-color': '#fff',
-    'avatar-border-color': 'blue',
-  },
-  AgentBar: {
-    Avatar: {
-      size: '42px',
-    },
-    css: {
-      backgroundColor: 'var(--secondary-color)',
-      borderColor: 'var(--avatar-border-color)',
-    },
-  },
-  Message: {
-    css: {
-      fontWeight: 'bold',
-    },
-  },
-};
-
 const genSecret = () => {
   return nanoid();
 };
@@ -47,7 +24,7 @@ const genSecret = () => {
 function App() {
   return (
     <div className='App'>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={defaultTheme}>
         <Provider url={SOCKET_URL} options={SOCKET_OPTIONS}>
           <Router>
             <Switch>

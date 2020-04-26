@@ -8,7 +8,7 @@
 - [x] Persist crypted messages server side
 - [x] Load previous message from server
 - [x] Serve file from express
-- [ ] Allow url configuration
+- [x] Allow backend url configuration at build
 - [ ] Can customize user name
 - [ ] Better style
 - [ ] Custom favicon
@@ -18,6 +18,7 @@
 
 # v0.2
 
+- [ ] Allow backend url configuration at runtime
 - [ ] Show connected users
 - [ ] Responsive
 - [ ] Save user name in Localstorage

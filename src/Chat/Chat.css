@@ -1,13 +1,9 @@
 .chat {
+  color: #111;
+  flex-grow: 1;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
-  max-height: 100vh;
-  height: 100vh;
   width: 500px;
   background-color: #656f85;
 }
-
-/*.message-list {
-  flex-grow: 1;
-  overflow-y: scroll;
-}*/

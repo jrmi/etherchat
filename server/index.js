@@ -31,7 +31,7 @@ const rooms = {};
 const roomDBs = {};
 
 io.on('connection', (socket) => {
-  socket.on('join', (roomName) => {
+  socket.on('join', ({ room: roomName, uid }) => {
     if (rooms[roomName] === undefined) {
       rooms[roomName] = [];
     }
@@ -41,33 +41,36 @@ io.on('connection', (socket) => {
         autoload: true,
       });
     }
-    const userId = nanoid();
-    rooms[roomName].push(userId);
-    console.log(`User ${userId} join ${roomName}`);
+    rooms[roomName].push(uid);
+    console.log(`User ${uid} join ${roomName}`);
 
     socket.join(roomName);
-    socket.emit('yourid', { user: userId });
 
-    roomDBs[roomName].find({}, (err, docs) => {
-      socket.emit(
-        'history',
-        docs.map(({ content }) => content)
-      );
-    });
+    roomDBs[roomName]
+      .find({})
+      .sort({ uid: 1 })
+      .exec((err, docs) => {
+        socket.emit(
+          'history',
+          docs.map(({ content }) => content)
+        );
+      });
 
     // Send new user to all user of this room
-    socket.broadcast.to(roomName).emit('incoming', { user: userId });
+    socket.broadcast.to(roomName).emit('incoming', { user: { uid } });
 
     socket.on('message', (newMessage) => {
       console.log('newMessage', newMessage);
-      roomDBs[roomName].insert({ uid: nanoid(), content: newMessage });
+      roomDBs[roomName].count({}, (err, count) => {
+        roomDBs[roomName].insert({ uid: count, content: newMessage });
+      });
       socket.emit('newMessage', newMessage);
       socket.broadcast.to(roomName).emit('newMessage', newMessage);
     });
 
     socket.on('disconnect', () => {
-      console.log(`User ${userId} disconnected`);
-      rooms[roomName] = rooms[roomName].filter((id) => id === userId);
+      console.log(`User ${uid} disconnected`);
+      rooms[roomName] = rooms[roomName].filter((id) => id === uid);
     });
   });
 });
