@@ -31,11 +31,16 @@ const generateMsg = ({ user: { name, userId }, content }) => {
 };
 
 const parseMessage = (rawMessage, secret) => {
-  const decryptedMessage = decrypt(rawMessage, secret);
-  return {
-    ...decryptedMessage,
-    timestamp: dayjs(decryptedMessage.timestamp),
-  };
+  try {
+    const decryptedMessage = decrypt(rawMessage, secret);
+    return {
+      ...decryptedMessage,
+      timestamp: dayjs(decryptedMessage.timestamp),
+    };
+  } catch (e) {
+    console.warn("Discard message as it can't be decoded", e);
+  }
+  return null;
 };
 
 const Chat = ({ room, secret, user: { name } }) => {
@@ -54,7 +59,11 @@ const Chat = ({ room, secret, user: { name } }) => {
     });
     socket.on('history', (messagesList) => {
       console.log('receiveHistory', messagesList);
-      setMessages(messagesList.map((message) => parseMessage(message, secret)));
+      setMessages(
+        messagesList
+          .map((message) => parseMessage(message, secret))
+          .filter((m) => m)
+      );
     });
     console.log('join room', room);
     socket.emit('join', room);
@@ -114,38 +123,38 @@ const Chat = ({ room, secret, user: { name } }) => {
         user: { name: name, userId },
         content: messageContent,
       });
-      emit('message', encrypt(newMessage, secret));
+      if (newMessage) emit('message', encrypt(newMessage, secret));
     },
     [emit, name, secret, userId]
   );
 
-  const messageGroups = React.useMemo(
-    (maxTimeDiff = 30000) => {
-      if (!messages || messages.length === 0) return [];
-      const messageGroups = [];
-      let previousUser = messages[0].userId;
-      let previousTime = messages[0].timestamp;
-      let currentGroup = [];
+  const computeMessageGroup = (maxTimeDiff = 30000) => {
+    if (!messages || messages.length === 0) return [];
 
-      messages.forEach((message, index) => {
-        if (
-          message.userId !== previousUser ||
-          message.timestamp.diff(previousTime) > maxTimeDiff
-        ) {
-          previousUser = message.userId;
-          messageGroups.push(currentGroup);
-          currentGroup = [];
-        }
-        previousTime = message.timestamp;
-        currentGroup.push(message);
-        if (index === messages.length - 1) {
-          messageGroups.push(currentGroup);
-        }
-      });
-      return messageGroups;
-    },
-    [messages]
-  );
+    const messageGroups = [];
+    let previousUser = messages[0].userId;
+    let previousTime = messages[0].timestamp;
+    let currentGroup = [];
+
+    messages.forEach((message, index) => {
+      if (
+        message.userId !== previousUser ||
+        message.timestamp.diff(previousTime) > maxTimeDiff
+      ) {
+        previousUser = message.userId;
+        messageGroups.push(currentGroup);
+        currentGroup = [];
+      }
+      previousTime = message.timestamp;
+      currentGroup.push(message);
+      if (index === messages.length - 1) {
+        messageGroups.push(currentGroup);
+      }
+    });
+    return messageGroups;
+  };
+
+  const messageGroups = React.useMemo(computeMessageGroup, [messages]);
 
   return (
     <div className='chat'>

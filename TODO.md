@@ -5,7 +5,7 @@
 - [x] Favicon new message count
 - [x] Handle reset count on not idle
 - [x] Add Home page
-- [ ] Persist crypted messages server side
+- [x] Persist crypted messages server side
 - [ ] Can customize user name
 - [ ] Load previous message from server
 - [ ] Better style
@@ -36,3 +36,4 @@
 - [ ] Improve security
 - [ ] Emojies
 - [ ] File sharing/transfert
+- [ ] Merge grouped message
