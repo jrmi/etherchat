@@ -1,0 +1,12 @@
+:local(.list) {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #222;
+  list-style-type: none;
+}
+:local(li) {
+  padding: 0.5rem 0;
+  background: #fff;
+  color: #222;
+  list-style-type: none;
+}

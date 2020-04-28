@@ -2,7 +2,17 @@ import React from 'react';
 import { useSocket, useEmit } from '@scripters/use-socket.io';
 import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
-import { encrypt, decrypt } from './utils';
+import debounce from 'lodash.debounce';
+import CryptoJS from 'crypto-js';
+
+export const encrypt = (message, secret) => {
+  return CryptoJS.AES.encrypt(JSON.stringify(message), secret).toString();
+};
+
+export const decrypt = (cryptedMessage, secret) => {
+  var bytes = CryptoJS.AES.decrypt(cryptedMessage, secret);
+  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+};
 
 const generateMsg = ({ user: { name, uid }, content }) => {
   const newMessage = {
@@ -31,6 +41,8 @@ const useRoom = ({ room, secret, user, onMessage = () => {} }) => {
   const socket = useSocket();
   const emit = useEmit();
   const [messages, setMessages] = React.useState([]);
+  const [users, setUsers] = React.useState([]);
+  const [joined, setJoined] = React.useState(false);
 
   React.useEffect(() => {
     // To get message history
@@ -41,13 +53,33 @@ const useRoom = ({ room, secret, user, onMessage = () => {} }) => {
           .filter((m) => m)
       );
     });
-    console.log('join room', room);
+    socket.on('userListUpdate', (users) => {
+      console.log('userListUpdate', users);
+      setUsers(users);
+    });
     // Join the room
-    socket.emit('join', { room, uid: user.uid });
+    if (!joined) {
+      console.log('Join room', room);
+      socket.emit('join', { room, user });
+      setJoined(true);
+    }
     return () => {
       socket.off('history');
+      socket.off('userListUpdate');
     };
-  }, [room, secret, socket, user.uid]);
+  }, [joined, room, secret, socket, user]);
+
+  const debouncedEmitUpdateUser = React.useCallback(
+    debounce((newUser) => {
+      socket.emit('updateUser', newUser);
+    }, 500),
+    []
+  );
+
+  React.useEffect(() => debouncedEmitUpdateUser(user), [
+    debouncedEmitUpdateUser,
+    user,
+  ]);
 
   React.useEffect(() => {
     // New message handler
@@ -72,14 +104,14 @@ const useRoom = ({ room, secret, user, onMessage = () => {} }) => {
   const sendMessage = React.useCallback(
     (messageContent) => {
       const newMessage = generateMsg({
-        user,
+        user: { name: user.name, uid: user.uid },
         content: messageContent,
       });
       if (newMessage) emit('message', encrypt(newMessage, secret));
     },
     [emit, secret, user]
   );
-  return [messages, sendMessage];
+  return [messages, sendMessage, users];
 };
 
 export default useRoom;

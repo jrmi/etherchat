@@ -1,6 +1,5 @@
 import React from 'react';
 import './Chat.css';
-import { updateFavicon, notify } from './utils';
 import MessageForm from './MessageForm';
 import {
   MessageList,
@@ -9,48 +8,7 @@ import {
   MessageGroup,
 } from '@livechat/ui-kit';
 
-import useVisibility from '../Hooks/useVisibility';
-import useActivity from '../Hooks/useActivity';
-import useRoom from './useRoom';
-
-const Chat = ({ room, secret, user: { name, uid }, user, setUser }) => {
-  //const [messages, setMessages] = React.useState([]);
-  const [unreadCount, setUnreadCount] = React.useState(0);
-  const visibility = useVisibility();
-  const active = useActivity();
-
-  const [messages, sendMessage] = useRoom({
-    room,
-    secret,
-    user,
-    onMessage: (message) => {
-      if (message.user.uid !== uid && !visibility) {
-        setUnreadCount((prevUnreadCount) => prevUnreadCount + 1);
-        notify(message);
-      }
-    },
-  });
-
-  React.useEffect(() => {
-    // Update favicon en read count change
-    updateFavicon(unreadCount);
-  }, [unreadCount]);
-
-  React.useEffect(() => {
-    // Update favicon en read count change
-    if (active) {
-      setUnreadCount(0);
-    }
-  }, [active]);
-
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    React.useEffect(() => {
-      // Update favicon en read count change
-      console.log('Visible', visibility);
-    }, [visibility]);
-  }
-
+const Chat = ({ user, messages, sendMessage }) => {
   // Split messages in groups
   const computeMessageGroup = (maxTimeDiff = 30000) => {
     if (!messages || messages.length === 0) return [];
@@ -98,7 +56,7 @@ const Chat = ({ room, secret, user: { name, uid }, user, setUser }) => {
                 <Message
                   authorName={name}
                   date={timestamp.format('HH:mm')}
-                  isOwn={msgUserId === uid}
+                  isOwn={msgUserId === user.uid}
                   key={msgUid}
                 >
                   <MessageText>{content}</MessageText>

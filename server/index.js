@@ -31,7 +31,7 @@ const rooms = {};
 const roomDBs = {};
 
 io.on('connection', (socket) => {
-  socket.on('join', ({ room: roomName, uid }) => {
+  socket.on('join', ({ room: roomName, user: { name, uid }, user }) => {
     if (rooms[roomName] === undefined) {
       rooms[roomName] = [];
     }
@@ -41,8 +41,8 @@ io.on('connection', (socket) => {
         autoload: true,
       });
     }
-    rooms[roomName].push(uid);
-    console.log(`User ${uid} join ${roomName}`);
+    rooms[roomName].push(user);
+    console.log(`User ${name}<${uid}> join ${roomName}`);
 
     socket.join(roomName);
 
@@ -64,13 +64,35 @@ io.on('connection', (socket) => {
       roomDBs[roomName].count({}, (err, count) => {
         roomDBs[roomName].insert({ uid: count, content: newMessage });
       });
+      // Emit new mesage event
       socket.emit('newMessage', newMessage);
       socket.broadcast.to(roomName).emit('newMessage', newMessage);
     });
 
+    socket.on('updateUser', (modifiedUser) => {
+      console.log('updateUser', modifiedUser);
+      rooms[roomName] = rooms[roomName].map((connectedUser) => {
+        if (connectedUser.uid === uid) {
+          return modifiedUser;
+        }
+        return connectedUser;
+      });
+      // Send updated user list
+      socket.emit('userListUpdate', rooms[roomName]);
+      socket.broadcast.to(roomName).emit('userListUpdate', rooms[roomName]);
+    });
+
+    // Send updated user list
+    socket.emit('userListUpdate', rooms[roomName]);
+    socket.broadcast.to(roomName).emit('userListUpdate', rooms[roomName]);
+
     socket.on('disconnect', () => {
-      console.log(`User ${uid} disconnected`);
-      rooms[roomName] = rooms[roomName].filter((id) => id === uid);
+      // Handle disconnection
+      console.log(`User ${name}<${uid}> disconnected`);
+      rooms[roomName] = rooms[roomName].filter(
+        ({ uid: connectedUid }) => connectedUid !== uid
+      );
+      socket.broadcast.to(roomName).emit('userListUpdate', rooms[roomName]);
     });
   });
 });

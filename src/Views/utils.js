@@ -1,5 +1,3 @@
-import CryptoJS from 'crypto-js';
-
 let favurl;
 
 export const updateFavicon = (count) => {
@@ -53,8 +51,14 @@ export const updateFavicon = (count) => {
   };
 };
 
-const showNotification = (message) => {
-  const notification = new Notification(message);
+const showNotification = (title, message, avatarUrl) => {
+  const notifBody = {
+    body: message,
+    tag: 'vector',
+    silent: true, // we play our own sounds
+  };
+  if (avatarUrl) notifBody['icon'] = avatarUrl;
+  const notification = new Notification(title, notifBody);
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
       // The tab has become visible so clear the now-stale Notification.
@@ -62,18 +66,22 @@ const showNotification = (message) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     }
   };
+  notification.onclick = function () {
+    window.focus();
+    notification.close();
+  };
   document.addEventListener('visibilitychange', handleVisibilityChange);
 };
 
 export const notify = ({ user: { name }, content }) => {
-  const textMessage = `New message from <${name}>:\n${content}`;
+  const title = `Message from ${name}`;
   if (!('Notification' in window)) {
     alert('This browser does not support desktop notification');
   }
   // Let's check whether notification permissions have already been granted
   else if (Notification.permission === 'granted') {
     // If it's okay let's create a notification
-    showNotification(textMessage);
+    showNotification(title, content);
   }
 
   // Otherwise, we need to ask the user for permission
@@ -81,17 +89,8 @@ export const notify = ({ user: { name }, content }) => {
     Notification.requestPermission().then(function (permission) {
       // If the user accepts, let's create a notification
       if (permission === 'granted') {
-        showNotification(textMessage);
+        showNotification('title', content);
       }
     });
   }
-};
-
-export const encrypt = (message, secret) => {
-  return CryptoJS.AES.encrypt(JSON.stringify(message), secret).toString();
-};
-
-export const decrypt = (cryptedMessage, secret) => {
-  var bytes = CryptoJS.AES.decrypt(cryptedMessage, secret);
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 };
