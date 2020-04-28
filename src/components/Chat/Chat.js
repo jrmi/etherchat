@@ -1,5 +1,5 @@
 import React from 'react';
-import './Chat.css';
+import styles from './Chat.module.css';
 import MessageForm from './MessageForm';
 import {
   MessageList,
@@ -42,7 +42,7 @@ const Chat = ({ user, messages, sendMessage }) => {
   const messageGroups = React.useMemo(computeMessageGroup, [messages]);
 
   return (
-    <div className='chat'>
+    <div className={styles.container}>
       <MessageList active style={{ paddingTop: '3rem' }}>
         {messageGroups.map(({ id: groupUid, group }) => (
           <MessageGroup key={groupUid} onlyFirstWithMeta>

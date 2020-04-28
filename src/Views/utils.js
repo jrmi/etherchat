@@ -25,7 +25,7 @@ export const updateFavicon = (count) => {
       context.beginPath();
       context.arc(
         canvas.width - faviconSize / 3,
-        faviconSize / 3,
+        2 * (faviconSize / 3),
         faviconSize / 3,
         0,
         2 * Math.PI
@@ -34,14 +34,14 @@ export const updateFavicon = (count) => {
       context.fill();
 
       // Draw Notification Number
-      context.font = '10px "helvetica", sans-serif';
+      context.font = '11px "helvetica", sans-serif';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillStyle = '#FFFFFF';
+      context.fillStyle = '#ffffff';
       context.fillText(
-        String(count),
+        String(count < 9 ? count : 9),
         canvas.width - faviconSize / 3,
-        faviconSize / 3
+        2 * (faviconSize / 3)
       );
       // Replace favicon
       favicon.href = canvas.toDataURL('image/png');

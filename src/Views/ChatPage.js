@@ -47,7 +47,7 @@ const ChatPage = () => {
 
   React.useEffect(() => {
     // Update favicon en read count change
-    updateFavicon(unreadCount);
+    updateFavicon(unreadCount < 9 ? unreadCount : 9);
   }, [unreadCount]);
 
   React.useEffect(() => {

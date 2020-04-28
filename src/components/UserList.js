@@ -1,8 +1,6 @@
 import React from 'react';
 import styles from './UserList.module.css';
 
-console.log(styles);
-
 const UserList = ({ users, ...rest }) => {
   return (
     <ul {...rest} className={styles.list}>

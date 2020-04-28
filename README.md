@@ -78,9 +78,9 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 - [x] Serve file from express
 - [x] Allow backend url configuration at build
 - [x] Can customize user name
-- [ ] Show connected users
-- [ ] Better style
+- [x] Show connected users
 - [ ] Custom favicon
+- [ ] Better style
 - [ ] Add ci
 - [ ] Add tests
 - [ ] Improve Readme

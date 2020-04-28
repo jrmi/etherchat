@@ -1,6 +1,5 @@
 import React from 'react';
-import './Chat.css';
-import './MessageForm.css';
+import style from './MessageForm.module.css';
 
 import {
   TextComposer,
